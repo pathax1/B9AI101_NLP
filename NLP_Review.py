@@ -1,5 +1,3 @@
-# NLP + Topic Modeling with Streamlit (No BERTopic – PyCharm Version)
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -17,10 +15,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.manifold import TSNE
-
-# --------------------------------
-# 🔧 Fix: NLTK Setup for Windows
-# --------------------------------
 warnings.filterwarnings("ignore")
 
 nltk_data_dir = os.path.join(os.path.expanduser("~"), "nltk_data")
@@ -33,7 +27,7 @@ nltk.download("omw-1.4", download_dir=nltk_data_dir)
 _ = PunktSentenceTokenizer()
 
 # --------------------------------
-# 📘 Helper Functions
+# Functions
 # --------------------------------
 
 def load_data(filepath):
@@ -84,13 +78,13 @@ def plot_tsne(matrix, labels=5):
     return reduced_data, cluster_labels
 
 # --------------------------------
-# 🖥️ Streamlit App Interface
+# 🖥 Streamlit App Interface
 # --------------------------------
 
 st.set_page_config(page_title="NLP & Topic Modeling App", layout="wide")
-st.title("🧠 NLP & Topic Modeling Dashboard (PyCharm Edition)")
+st.title(" NLP & Topic Modeling Dashboard (PyCharm Edition)")
 
-uploaded_file = st.file_uploader("📤 Upload a CSV file with a 'review_body' column", type=['csv'])
+uploaded_file = st.file_uploader(" Upload a CSV file with a 'review_body' column", type=['csv'])
 
 if uploaded_file is not None:
     df = load_data(uploaded_file)
@@ -101,16 +95,16 @@ else:
         st.warning("📎 Using local 'Review_data.csv' since no file was uploaded.")
         df = load_data(default_path)
     else:
-        st.error("❌ No file uploaded and no local file found!")
+        st.error(" No file uploaded and no local file found!")
         st.stop()
 
 reviews = extract_reviews(df)
 
-st.subheader("🔍 Sample Reviews")
+st.subheader(" Sample Reviews")
 st.write(reviews[:3])
 
 # WordCloud
-st.subheader("☁️ WordCloud")
+st.subheader(" WordCloud")
 wc = generate_wordcloud(reviews)
 fig, ax = plt.subplots()
 ax.imshow(wc, interpolation="bilinear")
@@ -122,17 +116,17 @@ tfidf_matrix, tfidf_model = get_tfidf_matrix(reviews)
 st.success(f"TF-IDF Matrix Shape: {tfidf_matrix.shape}")
 
 # LDA Topics
-st.subheader("📚 Topics from LDA")
+st.subheader(" Topics from LDA")
 feature_names = tfidf_model.get_feature_names_out()
 topics = perform_lda(tfidf_matrix, feature_names)
 for t in topics:
     st.markdown(f"- {t}")
 
 # t-SNE Visualization
-st.subheader("🔢 t-SNE Cluster Visualization")
+st.subheader(" t-SNE Cluster Visualization")
 reduced_data, cluster_labels = plot_tsne(tfidf_matrix)
 fig2, ax2 = plt.subplots()
 scatter = ax2.scatter(reduced_data[:, 0], reduced_data[:, 1], c=cluster_labels, cmap='viridis')
 st.pyplot(fig2)
 
-st.success("✅ Analysis Complete!")
+st.success(" Analysis Complete!")
