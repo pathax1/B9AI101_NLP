@@ -1,4 +1,4 @@
-# File: NLP_Review.py (Enhanced)
+# File: NLP_Review.py
 
 import streamlit as st
 import pandas as pd
@@ -28,10 +28,7 @@ nltk.download("wordnet", download_dir=nltk_data_dir)
 nltk.download("omw-1.4", download_dir=nltk_data_dir)
 _ = PunktSentenceTokenizer()
 
-# -----------------------------------------
 # Functions
-# -----------------------------------------
-
 def load_data(filepath):
     return pd.read_csv(filepath)
 
@@ -69,7 +66,7 @@ def perform_lda(matrix, feature_names, num_topics=5, num_words=10):
         topics.append(f"Topic {idx+1}: " + ", ".join(topic_words))
     return topics
 
-def plot_tsne(matrix, labels=5):
+def plot_tsne(matrix, labels=3):
     model = KMeans(n_clusters=labels, random_state=42)
     cluster_labels = model.fit_predict(matrix)
     tsne = TSNE(n_components=2, random_state=42, perplexity=40)
@@ -79,8 +76,6 @@ def plot_tsne(matrix, labels=5):
 def convert_df_to_csv(df):
     return df.to_csv(index=False).encode('utf-8')
 
-
-
 def convert_df_to_excel(df):
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
@@ -88,32 +83,27 @@ def convert_df_to_excel(df):
     output.seek(0)
     return output
 
-
-# -----------------------------------------
 # Streamlit App
-# -----------------------------------------
-
 st.set_page_config(page_title="NLP & Topic Modeling Dashboard", layout="wide")
-st.title(" NLP & Topic Modeling Dashboard")
+st.title("NLP & Topic Modeling Dashboard")
 
 # Sidebar
-st.sidebar.title(" Configuration")
+st.sidebar.title("Configuration")
 num_topics = st.sidebar.slider("Number of LDA Topics", 2, 10, 5)
 max_df = st.sidebar.slider("Max DF (Remove overly common words)", 0.5, 1.0, 0.99)
 min_df = st.sidebar.slider("Min DF (Remove rare words)", 0.0, 0.1, 0.01)
 max_features = st.sidebar.slider("Max Features", 100, 3000, 1000)
 
-uploaded_file = st.file_uploader(" Upload a CSV file with a 'review_body' column", type=['csv'])
+uploaded_file = st.file_uploader("Upload a CSV file with a 'review_body' column", type=['csv'])
 
 if uploaded_file is not None:
     df = load_data(uploaded_file)
 else:
-    st.warning(" Please upload a CSV file to proceed.")
+    st.warning("Please upload a CSV file to proceed.")
     st.stop()
 
-
 reviews = extract_reviews(df)
-st.subheader(" Sample Reviews")
+st.subheader("Sample Reviews")
 st.write(reviews[:3])
 
 # WordCloud
@@ -124,33 +114,40 @@ ax_wc.imshow(wc, interpolation="bilinear")
 ax_wc.axis("off")
 st.pyplot(fig_wc)
 
-# TF-IDF + LDA
+# TF-IDF and LDA
 tfidf_matrix, tfidf_model = get_tfidf_matrix(reviews, max_df, min_df, max_features)
 st.success(f"TF-IDF Matrix Shape: {tfidf_matrix.shape}")
 
 feature_names = tfidf_model.get_feature_names_out()
 topics = perform_lda(tfidf_matrix, feature_names, num_topics=num_topics)
-st.subheader(" Topics from LDA")
+st.subheader("Topics from LDA")
 for t in topics:
     st.markdown(f"- {t}")
 
-# Clustering with t-SNE
-st.subheader(" t-SNE Clustering")
+# t-SNE Clustering
+st.subheader("t-SNE Clustering")
 reduced_data, cluster_labels, model = plot_tsne(tfidf_matrix)
+
+# Guarantee all clusters appear in the legend
 fig_tsne, ax_tsne = plt.subplots()
 scatter = ax_tsne.scatter(reduced_data[:, 0], reduced_data[:, 1], c=cluster_labels, cmap='tab10')
+
+unique_clusters = np.unique(cluster_labels)
 legend_labels = [f"Cluster {i}" for i in range(model.n_clusters)]
-handles = [plt.Line2D([], [], marker='o', color=scatter.cmap(i / model.n_clusters), linestyle='', label=label) for i, label in enumerate(legend_labels)]
+handles = [
+    plt.Line2D([], [], marker='o', color=scatter.cmap(i / model.n_clusters), linestyle='', label=f"Cluster {i}")
+    for i in range(model.n_clusters)
+]
 ax_tsne.legend(handles=handles, title="Legend", loc='upper right')
 st.pyplot(fig_tsne)
 
-# Optional Data Export
-st.subheader(" Export Clustered Data")
+# Export Options
+st.subheader("Export Clustered Data")
 df_result = pd.DataFrame({
     "review_body": reviews,
     "cluster_label": cluster_labels
 })
-st.download_button(" Download CSV", convert_df_to_csv(df_result), "clustered_reviews.csv", "text/csv")
-st.download_button(" Download Excel", convert_df_to_excel(df_result), "clustered_reviews.xlsx", "application/vnd.ms-excel")
+st.download_button("Download CSV", convert_df_to_csv(df_result), "clustered_reviews.csv", "text/csv")
+st.download_button("Download Excel", convert_df_to_excel(df_result), "clustered_reviews.xlsx", "application/vnd.ms-excel")
 
-st.success(" Done! All tasks executed successfully.")
+st.success("Done! All tasks executed successfully.")
